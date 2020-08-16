@@ -16,6 +16,12 @@ pub use crate::liblz4::BlockMode;
 pub use crate::liblz4::BlockSize;
 pub use crate::liblz4::ContentChecksum;
 
+// async versions
+
+mod r#async;
+pub use r#async::decoder::Decoder as AsyncDecoder;
+
+
 #[cfg(not(all(
     target_arch = "wasm32",
     not(any(target_env = "wasi", target_os = "wasi"))
