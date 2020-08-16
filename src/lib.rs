@@ -18,8 +18,10 @@ pub use crate::liblz4::ContentChecksum;
 
 // async versions
 
+#[cfg(feature ="async")]
 mod r#async;
-pub use r#async::decoder::Decoder as AsyncDecoder;
+#[cfg(feature ="async")]
+pub use r#async::decoder::AsyncDecoder;
 
 
 #[cfg(not(all(
