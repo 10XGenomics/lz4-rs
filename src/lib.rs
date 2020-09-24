@@ -11,6 +11,7 @@ pub mod block;
 pub use crate::decoder::Decoder;
 pub use crate::encoder::Encoder;
 pub use crate::encoder::EncoderBuilder;
+pub use crate::encoder::EncoderDictionary;
 pub use crate::liblz4::version;
 pub use crate::liblz4::BlockMode;
 pub use crate::liblz4::BlockSize;

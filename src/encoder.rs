@@ -3,10 +3,16 @@ use super::size_t;
 use std::cmp;
 use std::io::Result;
 use std::io::Write;
+use std::io::{Error, ErrorKind};
 use std::ptr;
+use std::sync::Arc;
 
 struct EncoderContext {
     c: LZ4FCompressionContext,
+}
+
+pub struct EncoderDictionary {
+    cdict: LZ4FCDict,
 }
 
 #[derive(Clone)]
@@ -18,13 +24,39 @@ pub struct EncoderBuilder {
     level: u32,
     // 1 == always flush (reduce need for tmp buffer)
     auto_flush: bool,
+    dictionary: Option<Arc<EncoderDictionary>>,
 }
 
 pub struct Encoder<W> {
     c: EncoderContext,
+    // Needs to live as long as the Encoder
+    _dict: Option<Arc<EncoderDictionary>>,
     w: W,
     limit: usize,
     buffer: Vec<u8>,
+}
+
+impl EncoderDictionary {
+    pub fn new(dict: &[u8]) -> Result<EncoderDictionary> {
+        let cdict = unsafe { LZ4F_createCDict(dict.as_ptr(), dict.len()) };
+
+        if cdict.0.is_null() {
+            Err(Error::new(
+                ErrorKind::Other,
+                LZ4Error::new(String::from("Failed to create CDict.")),
+            ))
+        } else {
+            Ok(EncoderDictionary { cdict })
+        }
+    }
+}
+
+impl Drop for EncoderDictionary {
+    fn drop(&mut self) {
+        unsafe {
+            LZ4F_freeCDict(self.cdict);
+        }
+    }
 }
 
 impl EncoderBuilder {
@@ -35,6 +67,7 @@ impl EncoderBuilder {
             checksum: ContentChecksum::ChecksumEnabled,
             level: 0,
             auto_flush: false,
+            dictionary: None,
         }
     }
 
@@ -63,6 +96,11 @@ impl EncoderBuilder {
         self
     }
 
+    pub fn dictionary(&mut self, dictionary: Arc<EncoderDictionary>) -> &mut Self {
+        self.dictionary = Some(dictionary);
+        self
+    }
+
     pub fn build<W: Write>(&self, w: W) -> Result<Encoder<W>> {
         let block_size = self.block_size.get_size();
         let preferences = LZ4FPreferences {
@@ -79,12 +117,21 @@ impl EncoderBuilder {
         let mut encoder = Encoder {
             w,
             c: EncoderContext::new()?,
+            _dict: self.dictionary.clone(),
             limit: block_size,
             buffer: Vec::with_capacity(check_error(unsafe {
                 LZ4F_compressBound(block_size as size_t, &preferences)
             })?),
         };
-        encoder.write_header(&preferences)?;
+        match &self.dictionary {
+            Some(dict) => {
+                encoder.write_header_with_dict(&preferences, dict)?;
+            }
+            None => {
+                encoder.write_header(&preferences)?;
+            }
+        }
+
         Ok(encoder)
     }
 }
@@ -96,6 +143,24 @@ impl<W: Write> Encoder<W> {
                 self.c.c,
                 self.buffer.as_mut_ptr(),
                 self.buffer.capacity() as size_t,
+                preferences,
+            ))?;
+            self.buffer.set_len(len);
+        }
+        self.w.write_all(&self.buffer)
+    }
+
+    fn write_header_with_dict(
+        &mut self,
+        preferences: &LZ4FPreferences,
+        dict: &EncoderDictionary,
+    ) -> Result<()> {
+        unsafe {
+            let len = check_error(LZ4F_compressBegin_usingCDict(
+                self.c.c,
+                self.buffer.as_mut_ptr(),
+                self.buffer.capacity() as size_t,
+                dict.cdict,
                 preferences,
             ))?;
             self.buffer.set_len(len);
@@ -189,7 +254,8 @@ impl Drop for EncoderContext {
 #[cfg(test)]
 mod test {
     use super::EncoderBuilder;
-    use std::io::Write;
+    use super::EncoderDictionary;
+    use std::{io::Write, sync::Arc};
 
     #[test]
     fn test_encoder_smoke() {
@@ -219,5 +285,20 @@ mod test {
         fn check_send<S: Send>(_: &S) {}
         let enc = EncoderBuilder::new().build(Vec::new());
         check_send(&enc);
+    }
+
+    #[test]
+    fn test_encoder_dictionary() {
+        let dictionary = EncoderDictionary::new(b"compression is good").unwrap();
+        let mut encoder = EncoderBuilder::new()
+            .level(1)
+            .dictionary(Arc::new(dictionary))
+            .build(Vec::new())
+            .unwrap();
+        encoder
+            .write(b"dictionary compression is good for small files")
+            .unwrap();
+        let (_, result) = encoder.finish();
+        result.unwrap();
     }
 }
