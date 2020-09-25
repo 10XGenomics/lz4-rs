@@ -18,11 +18,10 @@ pub use crate::liblz4::ContentChecksum;
 
 // async versions
 
-#[cfg(feature ="async")]
+#[cfg(feature = "async")]
 mod r#async;
-#[cfg(feature ="async")]
+#[cfg(feature = "async")]
 pub use r#async::decoder::AsyncDecoder;
-
 
 #[cfg(not(all(
     target_arch = "wasm32",

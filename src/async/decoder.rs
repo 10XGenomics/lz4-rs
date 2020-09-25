@@ -2,8 +2,8 @@ use crate::liblz4::*;
 use crate::size_t;
 use std::io::{Error, ErrorKind, Result};
 use std::ptr;
-use tokio::io::AsyncRead;
 use std::task::Poll;
+use tokio::io::AsyncRead;
 
 const BUFFER_SIZE: usize = 32 * 1024;
 
@@ -55,8 +55,12 @@ impl<R: AsyncRead> AsyncDecoder<R> {
     }
 }
 
-impl<R: AsyncRead+Unpin> AsyncRead for AsyncDecoder<R> {
-    fn poll_read(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context, buf: &mut [u8]) -> Poll<Result<usize>> {
+impl<R: AsyncRead + Unpin> AsyncRead for AsyncDecoder<R> {
+    fn poll_read(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context,
+        buf: &mut [u8],
+    ) -> Poll<Result<usize>> {
         if self.next == 0 || buf.is_empty() {
             return Poll::Ready(Ok(0));
         }
