@@ -14,11 +14,17 @@ struct DecoderContext {
 
 pub struct AsyncDecoder<R> {
     c: DecoderContext,
-    r: R,  /// underying AsyncReader, e.g. file
-    buf: Box<[u8]>,  /// undecoded bytes filled from r
-    pos: usize, /// next position of buf[] to decode
+    /// underying AsyncReader, e.g. file
+    r: R,
+    /// undecoded bytes filled from r
+    ///  <- decoded ->  <- not decoded yet -->
+    /// [0......(pos-1)|(pos)..........(len-1)|(len)...]
+    buf: Box<[u8]>, 
+    /// next position of buf[] to decode
+    pos: usize,
     len: usize,
-    next: usize,  /// minimum next bytes remaining. we don't read more than this.
+    /// minimum next bytes remaining. we don't read more than this.
+    next: usize,  
 }
 
 impl<R: AsyncRead> AsyncDecoder<R> {
@@ -75,12 +81,12 @@ impl<R: AsyncRead + Unpin> AsyncRead for AsyncDecoder<R> {
                 };
 
                 let underying_reader = std::pin::Pin::new(&mut s.r);
-                let r = ReadBuf::new(&mut s.buf[0..need]);
+                let mut r = ReadBuf::new(&mut s.buf[0..need]);
                 match underying_reader.poll_read(cx, &mut r) {
                     Poll::Ready(Ok(())) => {
                         if r.remaining() == r.capacity() {
                             // underying reader is at EOF
-                            self.next = 0;
+                            s.next = 0;
                             return Poll::Ready(Ok(()));
                         }
                     }
