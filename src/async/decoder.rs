@@ -4,6 +4,7 @@ use std::io::{Error, ErrorKind, Result};
 use std::ptr;
 use std::task::Poll;
 use tokio::io::AsyncRead;
+use tokio::io::ReadBuf;
 
 const BUFFER_SIZE: usize = 32 * 1024;
 
@@ -13,11 +14,11 @@ struct DecoderContext {
 
 pub struct AsyncDecoder<R> {
     c: DecoderContext,
-    r: R,
-    buf: Box<[u8]>,
-    pos: usize,
+    r: R,  /// underying AsyncReader, e.g. file
+    buf: Box<[u8]>,  /// undecoded bytes filled from r
+    pos: usize, /// next position of buf[] to decode
     len: usize,
-    next: usize,
+    next: usize,  /// minimum next bytes remaining. we don't read more than this.
 }
 
 impl<R: AsyncRead> AsyncDecoder<R> {
@@ -31,7 +32,7 @@ impl<R: AsyncRead> AsyncDecoder<R> {
             buf: vec![0; BUFFER_SIZE].into_boxed_slice(),
             pos: BUFFER_SIZE,
             len: BUFFER_SIZE,
-            // Minimal LZ4 stream size
+            // 11 is Minimal LZ4 stream size
             next: 11,
         })
     }
@@ -59,38 +60,45 @@ impl<R: AsyncRead + Unpin> AsyncRead for AsyncDecoder<R> {
     fn poll_read(
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context,
-        buf: &mut [u8],
-    ) -> Poll<Result<usize>> {
-        if self.next == 0 || buf.is_empty() {
-            return Poll::Ready(Ok(0));
+        buf: &mut ReadBuf, // fill buf with decoded data
+    ) -> Poll<Result<()>> {
+        if self.next == 0 || buf.remaining() == 0 {  // EOF or dst buffer is full
+            return Poll::Ready(Ok(()));
         }
         let s = self.get_mut();
-        let mut dst_offset: usize = 0;
-        while dst_offset == 0 {
-            if s.pos >= s.len {
+        while buf.filled().len() == 0 {  // no decoded bytes are produced yet
+            if s.pos >= s.len {  // raw buffer is empty => read from underying buffer
                 let need = if s.buf.len() < s.next {
                     s.buf.len()
                 } else {
                     s.next
                 };
 
-                let r = std::pin::Pin::new(&mut s.r);
-                match r.poll_read(cx, &mut s.buf[0..need]) {
-                    Poll::Ready(Ok(0)) => break,
-                    Poll::Ready(Ok(n)) => s.len = n,
+                let underying_reader = std::pin::Pin::new(&mut s.r);
+                let r = ReadBuf::new(&mut s.buf[0..need]);
+                match underying_reader.poll_read(cx, &mut r) {
+                    Poll::Ready(Ok(())) => {
+                        if r.remaining() == r.capacity() {
+                            // underying reader is at EOF
+                            self.next = 0;
+                            return Poll::Ready(Ok(()));
+                        }
+                    }
                     Poll::Ready(Err(e)) => return Poll::Ready(Err(e)),
                     Poll::Pending => return Poll::Pending,
                 }
                 s.pos = 0;
+                s.len = r.filled().len();
                 s.next -= s.len;
             }
-            while (dst_offset < buf.len()) && (s.pos < s.len) {
+            while buf.remaining()>0 && (s.pos < s.len) {
                 let mut src_size = (s.len - s.pos) as size_t;
-                let mut dst_size = (buf.len() - dst_offset) as size_t;
+                let mut dst_size = buf.remaining() as size_t;
+                let dst_mem = buf.initialize_unfilled();
                 let len = check_error(unsafe {
                     LZ4F_decompress(
                         s.c.c,
-                        buf[dst_offset..].as_mut_ptr(),
+                        dst_mem.as_mut_ptr(),
                         &mut dst_size,
                         s.buf[s.pos..].as_ptr(),
                         &mut src_size,
@@ -98,16 +106,16 @@ impl<R: AsyncRead + Unpin> AsyncRead for AsyncDecoder<R> {
                     )
                 })?;
                 s.pos += src_size as usize;
-                dst_offset += dst_size as usize;
-                if len == 0 {
+                buf.advance(dst_size);
+                if len == 0 {  // raw bytes are not consumed
                     s.next = 0;
-                    return Poll::Ready(Ok(dst_offset));
+                    return Poll::Ready(Ok(()));
                 } else if s.next < len {
                     s.next = len;
                 }
             }
         }
-        Poll::Ready(Ok(dst_offset))
+        Poll::Ready(Ok(()))
     }
 }
 
