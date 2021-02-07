@@ -15,13 +15,13 @@ LZ4 is a very fast lossless compression algorithm, providing compression speed a
 ## Usage
 
 Put this in your `Cargo.toml`:
-```toml
-[dependencies]
-lz4 = "1.23.1"
-```
+<!-- ```toml -->
+<!-- [dependencies] -->
+<!-- lz4 = "1.23.1" -->
+<!-- ``` -->
 
 Sample code for compression/decompression:
-```rust
+<!-- ```rust
 extern crate lz4;
 
 use std::env;
@@ -66,4 +66,4 @@ fn decompress(source: &Path, destination: &Path) -> Result<()> {
 
     Ok(())
 }
-```
+``` -->
