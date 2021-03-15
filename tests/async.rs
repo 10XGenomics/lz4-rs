@@ -1,5 +1,5 @@
+use std::io::Write;
 use std::io::{Cursor, Seek, SeekFrom};
-use std::io::{Write};
 
 use tokio::io::AsyncReadExt;
 
@@ -11,7 +11,7 @@ fn test_async_decoder() {
     }
     let data = random_stream(&mut rng, 1024);
 
-    let mut buf = Cursor::new(vec![0;5*1024]);
+    let mut buf = Cursor::new(vec![0; 5 * 1024]);
     {
         let mut w = lz4::EncoderBuilder::new().build(&mut buf).unwrap();
         w.write_all(data.as_slice()).unwrap();
@@ -29,5 +29,4 @@ fn test_async_decoder() {
             assert_eq!(decoded, data);
         });
     }
-    
 }

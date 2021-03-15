@@ -19,11 +19,11 @@ pub struct AsyncDecoder<R> {
     /// undecoded bytes filled from r
     ///  <- decoded ->  <- not decoded yet -->
     /// [0......(pos-1)|(pos)..........(len-1)|(len)...]
-    raw_buf: Box<[u8]>, 
+    raw_buf: Box<[u8]>,
     pos: usize,
     len: usize,
     /// minimum next bytes remaining. we don't read more than this.
-    next_raw_bytes_expected_by_decoder: usize,  
+    next_raw_bytes_expected_by_decoder: usize,
 }
 
 impl<R: AsyncRead> AsyncDecoder<R> {
@@ -67,11 +67,12 @@ impl<R: AsyncRead + Unpin> AsyncRead for AsyncDecoder<R> {
         cx: &mut std::task::Context,
         dst_buf: &mut ReadBuf, // fill buf with decoded data
     ) -> Poll<Result<()>> {
-        if self.next_raw_bytes_expected_by_decoder == 0 || dst_buf.remaining() == 0 {  // EOF or dst buffer is full
+        if self.next_raw_bytes_expected_by_decoder == 0 || dst_buf.remaining() == 0 {
+            // EOF or dst buffer is full
             return Poll::Ready(Ok(()));
         }
         let slf = self.get_mut();
-        while dst_buf.remaining()>0 {
+        while dst_buf.remaining() > 0 {
             if slf.pos == slf.len {
                 // raw buffer is empty => read more from underying buffer
                 let raw_bytes_to_read = BUFFER_SIZE.min(slf.next_raw_bytes_expected_by_decoder);
@@ -82,11 +83,10 @@ impl<R: AsyncRead + Unpin> AsyncRead for AsyncDecoder<R> {
                         // Lz4 expects some bytes but inner reader is EOF
                         if r.filled().len() == 0 {
                             if slf.next_raw_bytes_expected_by_decoder > 0 {
-                                return Poll::Ready(
-                                    Err(Error::new(
-                                        ErrorKind::UnexpectedEof,
-                                        "Lz4 Decoder expects more bytes"))
-                                );
+                                return Poll::Ready(Err(Error::new(
+                                    ErrorKind::UnexpectedEof,
+                                    "Lz4 Decoder expects more bytes",
+                                )));
                             } else {
                                 // normal EOF
                                 break;
@@ -113,18 +113,19 @@ impl<R: AsyncRead + Unpin> AsyncRead for AsyncDecoder<R> {
                     ptr::null(),
                 )
             })?;
-            let input_consumed=  src_buf_remaining; drop(src_buf_remaining);
-            let output_produced = dst_buf_remaining; drop(dst_buf_remaining);
+            let input_consumed = src_buf_remaining;
+            drop(src_buf_remaining);
+            let output_produced = dst_buf_remaining;
+            drop(dst_buf_remaining);
             slf.pos += input_consumed;
             dst_buf.advance(output_produced);
             slf.next_raw_bytes_expected_by_decoder = next_expected_src_bytes;
-            if output_produced > 0 { 
+            if output_produced > 0 {
                 break;
             }
             if input_consumed == 0 || next_expected_src_bytes == 0 {
                 break;
             }
-            
         }
         Poll::Ready(Ok(()))
     }
