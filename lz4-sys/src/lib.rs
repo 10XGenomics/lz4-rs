@@ -380,6 +380,13 @@ extern "C" {
     // int LZ4_freeStreamDecode(LZ4_streamDecode_t* LZ4_stream)
     pub fn LZ4_freeStreamDecode(LZ4_stream: *mut LZ4StreamDecode) -> c_int;
 
+    // LZ4F_resetDecompressionContext()
+    // In case of an error, the context is left in "undefined" state.
+    // In which case, it's necessary to reset it, before re-using it.
+    // This method can also be used to abruptly stop any unfinished decompression,
+    // and start a new one using same context resources.
+    pub fn LZ4F_resetDecompressionContext(ctx: LZ4FDecompressionContext);
+
 }
 
 #[test]
