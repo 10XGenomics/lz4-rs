@@ -62,6 +62,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         }
     }
     println!("cargo:root={}", dst.display());
+    println!("cargo:include={}", include.display());
 
     Ok(())
 }
