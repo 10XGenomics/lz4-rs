@@ -1,7 +1,7 @@
 [package]
 name = "lz4"
 license = "MIT"
-version = "1.23.3"
+version = "1.24.0"
 readme = "README.md"
 authors = [ "Jens Heyens <jens.heyens@ewetel.net>", "Artem V. Navrotskiy <bozaro@buzzsoft.ru>", "Patrick Marks <pmarks@gmail.com>"]
 description = "Rust LZ4 bindings library."
@@ -16,7 +16,7 @@ doc = false
 
 [dependencies]
 libc = "0.2"
-lz4-sys = { path = "lz4-sys", version = "1.9.3" }
+lz4-sys = { path = "lz4-sys", version = "1.9.4" }
 
 [dev-dependencies]
 rand = ">=0.7, <=0.8"

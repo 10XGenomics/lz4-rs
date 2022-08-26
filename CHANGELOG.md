@@ -1,3 +1,8 @@
+
+1.24.0:
+ * Update to lz4 1.9.4 (lz4-sys 1.9.4) - this fixes CVE-2021-3520, which was a security vulnerability in the core lz4 library
+ * export the include directory of lz4 from build.rs
+
 1.23.3 (March 5, 2022):
 * Update lz4 to 1.9.3
 * Add `[de]compress_to_buffer` to block API to allow reusing buffers (#16)
