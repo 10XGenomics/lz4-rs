@@ -23,7 +23,7 @@ use super::liblz4::*;
 use std::io::{Error, ErrorKind, Result};
 
 /// Represents the compression mode do be used.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum CompressionMode {
     /// High compression with compression parameter
     HIGHCOMPRESSION(i32),
