@@ -19,7 +19,7 @@ jobs:
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.53.0
+          toolchain: 1.65.0
           override: true
           components: rustfmt
       - name: Checkout
@@ -38,7 +38,7 @@ jobs:
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.53.0
+          toolchain: 1.65.0
           target: i686-pc-windows-msvc
           override: true
           components: rustfmt
