@@ -21,3 +21,7 @@ lz4-sys = { path = "lz4-sys", version = "1.9.4" }
 [dev-dependencies]
 rand = ">=0.7, <=0.8"
 docmatic = "0.1"
+
+[features]
+# Enable this feature if you want to have a statically linked liblz4
+static = ["lz4-sys/static"]
