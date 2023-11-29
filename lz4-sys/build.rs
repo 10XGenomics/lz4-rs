@@ -20,6 +20,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     if !target.contains("windows")
         && !cfg!(feature = "static")
         && pkg_config::Config::new()
+            .print_system_libs(false)
             .cargo_metadata(true)
             .probe("liblz4")
             .is_ok()
