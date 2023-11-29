@@ -18,7 +18,6 @@ fn run() -> Result<(), Box<dyn Error>> {
     let target = get_from_env("TARGET")?;
 
     if !target.contains("windows")
-        && !cfg!(feature = "static")
         && pkg_config::Config::new()
             .print_system_libs(false)
             .cargo_metadata(true)
