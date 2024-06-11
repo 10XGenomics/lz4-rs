@@ -5,7 +5,7 @@ extern crate libc;
     target_arch = "wasm32",
     not(any(target_env = "wasi", target_os = "wasi"))
 )))]
-use libc::{c_void, c_char, c_uint, size_t, c_int};
+use libc::{c_void, c_char, c_uint, size_t, c_int, c_ulonglong};
 
 #[cfg(all(
     target_arch = "wasm32",
@@ -80,6 +80,7 @@ pub struct LZ4FFrameInfo {
     pub block_size_id: BlockSize,
     pub block_mode: BlockMode,
     pub content_checksum_flag: ContentChecksum,
+    pub content_size: c_ulonglong,
     pub reserved: [c_uint; 5],
 }
 

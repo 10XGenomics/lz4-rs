@@ -20,6 +20,7 @@ pub struct EncoderBuilder {
     // 1 == always flush (reduce need for tmp buffer)
     auto_flush: bool,
     favor_dec_speed: bool,
+    content_size: u64
 }
 
 #[derive(Debug)]
@@ -39,6 +40,7 @@ impl EncoderBuilder {
             level: 0,
             auto_flush: false,
             favor_dec_speed: false,
+            content_size: 0
         }
     }
 
@@ -74,6 +76,11 @@ impl EncoderBuilder {
         self
     }
 
+    pub fn content_size(&mut self, content_size: u64) -> &mut Self {
+        self.content_size = content_size;
+        self
+    }
+
     pub fn build<W: Write>(&self, w: W) -> Result<Encoder<W>> {
         let block_size = self.block_size.get_size();
         let preferences = LZ4FPreferences {
@@ -81,6 +88,7 @@ impl EncoderBuilder {
                 block_size_id: self.block_size.clone(),
                 block_mode: self.block_mode.clone(),
                 content_checksum_flag: self.checksum.clone(),
+                content_size: self.content_size.clone(),
                 reserved: [0; 5],
             },
             compression_level: self.level,
