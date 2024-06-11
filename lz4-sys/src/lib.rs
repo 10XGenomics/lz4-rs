@@ -74,14 +74,31 @@ pub enum ContentChecksum {
     ChecksumEnabled,
 }
 
+#[derive(Clone, Debug)]
+#[repr(u32)]
+pub enum FrameType {
+    Frame = 0,
+    SkippableFrame,
+}
+
+
+#[derive(Clone, Debug)]
+#[repr(u32)]
+pub enum BlockChecksum {
+    NoBlockChecksum = 0,
+    BlockChecksumEnabled,
+}
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct LZ4FFrameInfo {
     pub block_size_id: BlockSize,
     pub block_mode: BlockMode,
     pub content_checksum_flag: ContentChecksum,
+    pub frame_type: FrameType,
     pub content_size: c_ulonglong,
-    pub reserved: [c_uint; 5],
+    pub dict_id: c_uint,
+    pub block_checksum_flag: BlockChecksum,
 }
 
 #[derive(Debug)]
@@ -408,4 +425,9 @@ extern "C" {
 #[test]
 fn test_version_number() {
     unsafe { LZ4_versionNumber(); }
+}
+
+#[test]
+fn test_frame_info_size() {
+    assert_eq!(core::mem::size_of::<LZ4FFrameInfo>(), 32);
 }
