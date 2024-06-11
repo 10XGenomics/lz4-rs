@@ -14,7 +14,7 @@ struct EncoderContext {
 pub struct EncoderBuilder {
     block_size: BlockSize,
     block_mode: BlockMode,
-    // 1: each block followed by a checksum of block's compressed data; 0: disabled (default) 
+    // 1: each block followed by a checksum of block's compressed data; 0: disabled (default)
     block_checksum: BlockChecksum,
     checksum: ContentChecksum,
     // 0 == default (fast mode); values above 16 count as 16; values below 0 count as 0
@@ -22,7 +22,7 @@ pub struct EncoderBuilder {
     // 1 == always flush (reduce need for tmp buffer)
     auto_flush: bool,
     favor_dec_speed: bool,
-    content_size: u64
+    content_size: u64,
 }
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl EncoderBuilder {
             level: 0,
             auto_flush: false,
             favor_dec_speed: false,
-            content_size: 0
+            content_size: 0,
         }
     }
 
@@ -251,7 +251,11 @@ mod test {
 
     #[test]
     fn test_encoder_content_size() {
-        let mut encoder = EncoderBuilder::new().level(1).content_size(1024*1024).build(Vec::new()).unwrap();
+        let mut encoder = EncoderBuilder::new()
+            .level(1)
+            .content_size(1024 * 1024)
+            .build(Vec::new())
+            .unwrap();
         let mut input = Vec::new();
         let mut rnd: u32 = 42;
         for _ in 0..1024 * 1024 {
@@ -266,7 +270,7 @@ mod test {
         let mut output = Vec::new();
         dec.read_to_end(&mut output).unwrap();
         assert_eq!(input, output);
-        }
+    }
 
     #[test]
     fn test_encoder_send() {
