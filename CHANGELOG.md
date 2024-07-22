@@ -1,4 +1,7 @@
 
+1.26.0:
+ * Update to lz4 1.10.0
+
 1.25.0:
  * Add content_size setting to Lz4FrameInfo
  * Add LZ4_setStreamDecode
