@@ -40,6 +40,14 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
         }
     }
+    let need_wasm_shim = target == "wasm32-unknown-unknown" || target.starts_with("wasm32-wasi");
+
+    if need_wasm_shim {
+        println!("cargo:rerun-if-changed=wasm-shim/stdlib.h");
+        println!("cargo:rerun-if-changed=wasm-shim/string.h");
+
+        compiler.include("wasm-shim/");
+    }
     compiler.compile("liblz4.a");
 
     let src = env::current_dir()?.join("liblz4").join("lib");

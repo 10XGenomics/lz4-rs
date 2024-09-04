@@ -5,7 +5,13 @@ extern crate libc;
     target_arch = "wasm32",
     not(any(target_env = "wasi", target_os = "wasi"))
 )))]
-use libc::{c_void, c_char, c_uint, size_t, c_int, c_ulonglong};
+use libc::{c_char, c_int, c_uint, c_ulonglong, c_void, size_t};
+
+#[cfg(target_arch = "wasm32")]
+extern crate alloc;
+
+#[cfg(target_arch = "wasm32")]
+mod wasm_shim;
 
 #[cfg(all(
     target_arch = "wasm32",
@@ -17,7 +23,7 @@ extern crate std;
     target_arch = "wasm32",
     not(any(target_env = "wasi", target_os = "wasi"))
 ))]
-use std::os::raw::{c_void, c_char, c_uint, c_int};
+use std::os::raw::{c_char, c_int, c_uint, c_ulonglong, c_void};
 
 #[cfg(all(
     target_arch = "wasm32",
