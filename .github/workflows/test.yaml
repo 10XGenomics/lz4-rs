@@ -22,6 +22,8 @@ jobs:
           toolchain: 1.65.0
           override: true
           components: rustfmt
+      - name: Add wasm32 target
+        run: rustup target add wasm32-unknown-unknown
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -32,6 +34,10 @@ jobs:
         run: cargo build --release
       - name: unit tests
         run: cargo test -- --nocapture
+      - name: build (wasm32)
+        run: cargo build --target wasm32-unknown-unknown
+      - name: check (wasm32)
+        run: cargo check --target wasm32-unknown-unknown
   test-windows:
     runs-on: windows-latest
     steps:
