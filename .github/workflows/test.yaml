@@ -34,6 +34,14 @@ jobs:
         run: cargo build --release
       - name: unit tests
         run: cargo test -- --nocapture
+      - name: (MacOS) install LLVM
+        uses: KyleMayes/install-llvm-action@v2
+        if: "${{ matrix.platform == 'macos-latest' }}"
+        with:
+          version: "17"
+      - name: (MacOS) set LLVM as CC
+        if: "${{ matrix.platform == 'macos-latest' }}"
+        run: echo "CC=$(pwd)/llvm/bin/clang-17" >> $GITHUB_ENV
       - name: build (wasm32)
         run: cargo build --target wasm32-unknown-unknown
       - name: check (wasm32)
