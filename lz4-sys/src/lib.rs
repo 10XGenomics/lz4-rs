@@ -1,22 +1,40 @@
 #![no_std]
 extern crate libc;
 
-#[cfg(not(all(target_arch = "wasm32", not(any(target_os = "wasi")))))]
+#[cfg(not(all(
+    target_arch = "wasm32",
+    not(any(target_env = "wasi", target_os = "wasi"))
+)))]
 pub use libc::{c_char, c_int, c_uint, c_ulonglong, c_void, size_t};
 
-#[cfg(all(target_arch = "wasm32", not(any(target_os = "wasi"))))]
+#[cfg(all(
+    target_arch = "wasm32",
+    not(any(target_env = "wasi", target_os = "wasi"))
+))]
 extern crate alloc;
 
-#[cfg(all(target_arch = "wasm32", not(any(target_os = "wasi"))))]
+#[cfg(all(
+    target_arch = "wasm32",
+    not(any(target_env = "wasi", target_os = "wasi"))
+))]
 mod wasm_shim;
 
-#[cfg(all(target_arch = "wasm32", not(any(target_os = "wasi"))))]
+#[cfg(all(
+    target_arch = "wasm32",
+    not(any(target_env = "wasi", target_os = "wasi"))
+))]
 extern crate std;
 
-#[cfg(all(target_arch = "wasm32", not(any(target_os = "wasi"))))]
+#[cfg(all(
+    target_arch = "wasm32",
+    not(any(target_env = "wasi", target_os = "wasi"))
+))]
 pub use std::os::raw::{c_char, c_int, c_uint, c_ulonglong, c_void};
 
-#[cfg(all(target_arch = "wasm32", not(any(target_os = "wasi"))))]
+#[cfg(all(
+    target_arch = "wasm32",
+    not(any(target_env = "wasi", target_os = "wasi"))
+))]
 #[allow(non_camel_case_types)]
 pub type size_t = usize;
 
