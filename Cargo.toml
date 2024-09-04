@@ -15,7 +15,6 @@ test = false
 doc = false
 
 [dependencies]
-libc = "0.2"
 lz4-sys = { path = "lz4-sys", version = "1.10.0" }
 
 [dev-dependencies]
