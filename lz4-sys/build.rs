@@ -40,7 +40,9 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
         }
     }
-    let need_wasm_shim = target == "wasm32-unknown-unknown" || target.starts_with("wasm32-wasi");
+    let need_wasm_shim = target == "wasm32-unknown-unknown"
+        || target.starts_with("wasm32-wasi")
+        || target == "wasm32-unknown-emscripten";
 
     if need_wasm_shim {
         println!("cargo:rerun-if-changed=wasm-shim/stdlib.h");
