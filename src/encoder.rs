@@ -99,7 +99,7 @@ impl EncoderBuilder {
                 content_size: self.content_size.clone(),
                 frame_type: FrameType::Frame,
                 dict_id: 0,
-                block_checksum_flag: BlockChecksum::BlockChecksumEnabled,
+                block_checksum_flag: self.block_checksum.clone(),
             },
             compression_level: self.level,
             auto_flush: if self.auto_flush { 1 } else { 0 },
