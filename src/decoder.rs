@@ -92,7 +92,7 @@ impl<R: Read> Read for Decoder<R> {
                 dst_offset += dst_size as usize;
 
                 // We need to keep trying to read bytes from the decompressor
-                // until it is no longer emitting them, even after it 
+                // until it is no longer emitting them, even after it
                 // has finished reading bytes.
                 if dst_size == 0 && src_size == 0 {
                     return Ok(dst_offset);
@@ -303,8 +303,7 @@ mod test {
     #[test]
     fn issue_45() {
         // create an encoder
-        let mut enc = crate::EncoderBuilder::new()
-            .build(Vec::new()).unwrap();
+        let mut enc = crate::EncoderBuilder::new().build(Vec::new()).unwrap();
 
         // write 'a' 100 times to the encoder
         let text: Vec<u8> = vec!['a' as u8; 100];
@@ -312,7 +311,6 @@ mod test {
 
         // flush the encoder
         enc.flush().unwrap();
-
 
         // read from the decoder, buf_size bytes at a time
         for buf_size in [5, 10, 15, 20, 25] {
@@ -326,7 +324,7 @@ mod test {
                 if n == 0 {
                     break;
                 }
-                
+
                 total_bytes_read += n;
             }
 
