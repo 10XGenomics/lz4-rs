@@ -218,7 +218,8 @@ pub fn decompress(src: &[u8], uncompressed_size: Option<i32>) -> Result<Vec<u8>>
 
     let mut buffer = vec![0u8; size];
 
-    decompress_to_buffer(src, uncompressed_size, &mut buffer)?;
+    let sz = decompress_to_buffer(src, uncompressed_size, &mut buffer)?;
+    buffer.truncate(sz);
     Ok(buffer)
 }
 
@@ -293,6 +294,18 @@ mod test {
     use crate::block::{compress, decompress, decompress_to_buffer, CompressionMode};
 
     use super::compress_to_buffer;
+
+    /// This test will fail unless the buffer created by decompress is correctly truncated
+    #[test]
+    fn decompress_truncate_test() {
+        let src = "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111".as_bytes();
+        let rs_compressed = compress(src, None, false).unwrap();
+        let rs_compressed_rs_uncompressed =
+            decompress(&rs_compressed, Some((src.len() as i32) * 256)).unwrap();
+
+        // compare the uncompressed result from rust
+        assert_eq!(rs_compressed_rs_uncompressed, src,);
+    }
 
     #[test]
     fn test_compression_without_prefix() {
