@@ -69,13 +69,13 @@ impl<R: Read> Read for Decoder<R> {
                     self.next
                 };
                 self.len = self.r.read(&mut self.buf[0..need])?;
-                if self.len == 0 {
-                    break;
-                }
+                // NOTE: we do not exit here if there was nothing read
+                // The lz4 context may still have more bytes to emit.
+
                 self.pos = 0;
                 self.next -= self.len;
             }
-            while (dst_offset < buf.len()) && (self.pos < self.len) {
+            while (dst_offset < buf.len()) && ((self.pos < self.len) || self.len == 0) {
                 let mut src_size = (self.len - self.pos) as size_t;
                 let mut dst_size = (buf.len() - dst_offset) as size_t;
                 let len = check_error(unsafe {
@@ -90,6 +90,14 @@ impl<R: Read> Read for Decoder<R> {
                 })?;
                 self.pos += src_size as usize;
                 dst_offset += dst_size as usize;
+
+                // We need to keep trying to read bytes from the decompressor
+                // until it is no longer emitting them, even after it 
+                // has finished reading bytes.
+                if dst_size == 0 && src_size == 0 {
+                    return Ok(dst_offset);
+                }
+
                 if len == 0 {
                     self.next = 0;
                     return Ok(dst_offset);
@@ -288,6 +296,42 @@ mod test {
 
         assert_eq!(expected, actual);
         finish_decode(decoder);
+    }
+
+    /// Ensure that we emit the full decompressed stream even if we're
+    /// using a very small output buffer.
+    #[test]
+    fn issue_45() {
+        // create an encoder
+        let mut enc = crate::EncoderBuilder::new()
+            .build(Vec::new()).unwrap();
+
+        // write 'a' 100 times to the encoder
+        let text: Vec<u8> = vec!['a' as u8; 100];
+        enc.write_all(&text[..]).unwrap();
+
+        // flush the encoder
+        enc.flush().unwrap();
+
+
+        // read from the decoder, buf_size bytes at a time
+        for buf_size in [5, 10, 15, 20, 25] {
+            let mut buf = vec![0; buf_size];
+
+            let mut total_bytes_read = 0;
+
+            // create a decoder wrapping the backing buffer
+            let mut dec = crate::Decoder::new(&enc.writer()[..]).unwrap();
+            while let Ok(n) = dec.read(&mut buf[..]) {
+                if n == 0 {
+                    break;
+                }
+                
+                total_bytes_read += n;
+            }
+
+            assert_eq!(total_bytes_read, text.len());
+        }
     }
 
     fn random() -> StdRng {
