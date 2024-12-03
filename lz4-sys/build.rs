@@ -25,6 +25,10 @@ fn run() -> Result<(), Box<dyn Error>> {
         .opt_level(3);
 
     let target = get_from_env("TARGET")?;
+    if target.contains("riscv64") {
+        // riscv64 require explict on G/I/E
+        compiler.flag("-march=rv64g");
+    }
     if target.contains("windows") {
         if target == "i686-pc-windows-gnu" {
             // Disable auto-vectorization for 32-bit MinGW target.
