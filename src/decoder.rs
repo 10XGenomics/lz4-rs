@@ -20,6 +20,9 @@ pub struct Decoder<R> {
     next: usize,
 }
 
+// No interior mutability, so Decoder is Sync as long as R is Sync.
+unsafe impl<R: Read + Sync> Sync for Decoder<R> {}
+
 impl<R: Read> Decoder<R> {
     /// Creates a new decoder which reads its input from the given
     /// input stream. The input stream can be re-acquired by calling
